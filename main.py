@@ -1,19 +1,10 @@
 import sys
+import os
+import csv
 
-clients_list = [
-    {
-        'name' : 'sebas',
-        'company' : 'Google',
-        'email' : 'sebas@google.com',
-        'number' : [1,123567890] # [country code, number]
-    },
-    {
-        'name' : 'johan',
-        'company' : 'bin',
-        'email' : 'johan@bin.com',
-        'number' : [64,123567890]  # [country code, number]
-    }
-]
+clients_list = []
+CLIENT_TABLE = '.clients.csv'
+CLIENT_SCHEMA = ['name', 'company', 'email', 'number']
 
 def create_client(client_info):
     global clients_list
@@ -23,12 +14,11 @@ def create_client(client_info):
 def show_clients():
     global clients_list
     for id, client in enumerate(clients_list):
-        print(' {uid} | {name} | {company} | +{country_code}-{number}'.format(
+        print(' {uid} | {name} | {company} | {number}'.format(
         uid=id,
         name=client['name'],
         company=client['company'],
-        country_code=client['number'][0],
-        number=client['number'][1]
+        number=client['number']
         ))
 
 def update_client(name):
@@ -52,8 +42,9 @@ def update_client(name):
             value = _ask_for_data('Which country code is client the phone number?')
             clients_list[id]['email'] = value
         elif key == 'P':
-            value = _ask_for_data('What is the client phone number ?')
-            clients_list[id]['email'] = value
+            number_st = _ask_for_data('What is the client phone number ?')
+            country_code_st = _ask_for_data('Which country code is client the phone number?')
+            clients_list[id]['number'] = '+' + country_code_st + '-' + number_st
         elif key == 'EXIT':
             flag_update_done = True
         else:
@@ -74,6 +65,23 @@ def _search_index(name):
 
     print('Error : Name is not in the data base')
     return None
+
+def _initialize_clients_from_storage():
+    with open(CLIENT_TABLE, mode='r') as f:
+        reader = csv.DictReader(f,fieldnames=CLIENT_SCHEMA)
+
+        for row in reader:
+            clients_list.append(row)
+
+
+def _save_clients_to_storage():
+    tmp_table_name = CLIENT_TABLE + '.tmp'
+    with open(tmp_table_name,mode='w') as f:
+        writer = csv.DictWriter(f, fieldnames=CLIENT_SCHEMA)
+        writer.writerows(clients_list)
+
+        os.remove(CLIENT_TABLE)
+        os.rename(tmp_table_name ,CLIENT_TABLE)
 
 def _print_welcome():
     print('WELCOME TO PLATZI STORE')
@@ -108,7 +116,7 @@ def _get_client_information():
         'name' : name,
         'company' : company,
         'email' : email,
-        'number' : [int(country_code_st),int(number_st)] # [country code, number]
+        'number' : '+' + country_code_st + '-' + number_st # [country code, number]
     }
     return output
 
@@ -138,6 +146,7 @@ def _get_client_name(text = ''):
     return output
 
 if __name__ == "__main__" :
+    _initialize_clients_from_storage()
     _print_welcome()
 
     command = input()
@@ -172,3 +181,5 @@ if __name__ == "__main__" :
     else:
         print('Invalid Command')
         print('you should use \'--help\' for more information ')
+
+    _save_clients_to_storage()
